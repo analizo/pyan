@@ -17,12 +17,13 @@ from .analyzer import CallGraphVisitor
 from .visgraph import VisualGraph
 from .writers import TgfWriter, DotWriter, YedWriter, HTMLWriter, SVGWriter
 
+
 def main(cli_args=None):
     usage = """%(prog)s FILENAME... [--dot|--tgf|--yed|--svg|--html]"""
     desc = (
-        'Analyse one or more Python source files and generate an'
-        'approximate call graph of the modules, classes and functions'
-        ' within them.'
+        "Analyse one or more Python source files and generate an"
+        "approximate call graph of the modules, classes and functions"
+        " within them."
     )
 
     parser = ArgumentParser(usage=usage, description=desc)
@@ -31,35 +32,26 @@ def main(cli_args=None):
         "--dot",
         action="store_true",
         default=False,
-        help="output in GraphViz dot format"
+        help="output in GraphViz dot format",
     )
 
     parser.add_argument(
         "--tgf",
         action="store_true",
         default=False,
-        help="output in Trivial Graph Format"
+        help="output in Trivial Graph Format",
     )
 
     parser.add_argument(
-        "--svg",
-        action="store_true",
-        default=False,
-        help="output in SVG Format"
+        "--svg", action="store_true", default=False, help="output in SVG Format"
     )
 
     parser.add_argument(
-        "--html",
-        action="store_true",
-        default=False,
-        help="output in HTML Format"
+        "--html", action="store_true", default=False, help="output in HTML Format"
     )
 
     parser.add_argument(
-        "--yed",
-        action="store_true",
-        default=False,
-        help="output in yEd GraphML Format"
+        "--yed", action="store_true", default=False, help="output in yEd GraphML Format"
     )
 
     parser.add_argument(
@@ -67,7 +59,7 @@ def main(cli_args=None):
         dest="filename",
         help="write graph to FILE",
         metavar="FILE",
-        default=None
+        default=None,
     )
 
     parser.add_argument(
@@ -75,7 +67,7 @@ def main(cli_args=None):
         dest="namespace",
         help="filter for NAMESPACE",
         metavar="NAMESPACE",
-        default=None
+        default=None,
     )
 
     parser.add_argument(
@@ -83,93 +75,108 @@ def main(cli_args=None):
         dest="function",
         help="filter for FUNCTION",
         metavar="FUNCTION",
-        default=None
+        default=None,
     )
 
     parser.add_argument(
-        "-l", "--log",
-        dest="logname",
-        help="write log to LOG",
-        metavar="LOG"
+        "-l", "--log", dest="logname", help="write log to LOG", metavar="LOG"
     )
 
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         default=False,
         dest="verbose",
-        help="verbose output"
+        help="verbose output",
     )
 
     parser.add_argument(
-        "-V", "--very-verbose",
+        "-V",
+        "--very-verbose",
         action="store_true",
         default=False,
         dest="very_verbose",
-        help="even more verbose output (mainly for debug)"
+        help="even more verbose output (mainly for debug)",
     )
 
     parser.add_argument(
-        "-d", "--defines",
+        "-d",
+        "--defines",
         action="store_true",
         dest="draw_defines",
-        help="add edges for 'defines' relationships [default]"
+        help="add edges for 'defines' relationships [default]",
     )
 
     parser.add_argument(
-        "-n", "--no-defines",
+        "-i",
+        "--inherits",
+        action="store_true",
+        dest="draw_inherits",
+        help="add edges for 'inherits' relationships [default]",
+    )
+
+    parser.add_argument(
+        "-n",
+        "--no-defines",
         action="store_false",
         default=True,
         dest="draw_defines",
-        help="do not add edges for 'defines' relationships"
+        help="do not add edges for 'defines' relationships",
     )
 
     parser.add_argument(
-        "-u", "--uses",
+        "-u",
+        "--uses",
         action="store_true",
         default=True,
         dest="draw_uses",
-        help="add edges for 'uses' relationships [default]"
+        help="add edges for 'uses' relationships [default]",
     )
 
     parser.add_argument(
-        "-N", "--no-uses",
+        "-N",
+        "--no-uses",
         action="store_false",
         default=True,
         dest="draw_uses",
-        help="do not add edges for 'uses' relationships"
+        help="do not add edges for 'uses' relationships",
     )
 
     parser.add_argument(
-        "-c", "--colored",
+        "-c",
+        "--colored",
         action="store_true",
         default=False,
         dest="colored",
-        help="color nodes according to namespace [dot only]"
+        help="color nodes according to namespace [dot only]",
     )
 
     parser.add_argument(
-        "-G", "--grouped-alt",
+        "-G",
+        "--grouped-alt",
         action="store_true",
         default=False,
         dest="grouped_alt",
-        help="suggest grouping by adding invisible defines edges [only useful with --no-defines]"
+        help="suggest grouping by adding invisible defines edges [only useful with --no-defines]",
     )
 
     parser.add_argument(
-        "-g", "--grouped",
+        "-g",
+        "--grouped",
         action="store_true",
         default=False,
         dest="grouped",
-        help="group nodes (create subgraphs) according to namespace [dot only]"
+        help="group nodes (create subgraphs) according to namespace [dot only]",
     )
 
     parser.add_argument(
-        "-e", "--nested-groups",
+        "-e",
+        "--nested-groups",
         action="store_true",
         default=False,
         dest="nested_groups",
-        help="create nested groups (subgraphs) for nested namespaces (implies -g) [dot only]"
+        help="create nested groups (subgraphs) for nested namespaces (implies -g) [dot only]",
     )
 
     parser.add_argument(
@@ -181,15 +188,16 @@ def main(cli_args=None):
             "controlling the direction of the graph. "
             "Allowed values: ['TB', 'LR', 'BT', 'RL']. "
             "[dot only]"
-        )
+        ),
     )
 
     parser.add_argument(
-        "-a", "--annotated",
+        "-a",
+        "--annotated",
         action="store_true",
         default=False,
         dest="annotated",
-        help="annotate with module and source line number"
+        help="annotate with module and source line number",
     )
 
     known_args, unknown_args = parser.parse_known_args(cli_args)
@@ -197,21 +205,22 @@ def main(cli_args=None):
     filenames = [fn2 for fn in unknown_args for fn2 in glob(fn)]
 
     if len(unknown_args) == 0:
-        parser.error('Need one or more filenames to process')
+        parser.error("Need one or more filenames to process")
     elif len(filenames) == 0:
-        parser.error('No files found matching given glob: %s' % ' '.join(unknown_args))
+        parser.error("No files found matching given glob: %s" % " ".join(unknown_args))
 
     if known_args.nested_groups:
         known_args.grouped = True
 
     graph_options = {
-        'draw_defines': known_args.draw_defines,
-        'draw_uses': known_args.draw_uses,
-        'colored': known_args.colored,
-        'grouped_alt': known_args.grouped_alt,
-        'grouped': known_args.grouped,
-        'nested_groups': known_args.nested_groups,
-        'annotated': known_args.annotated
+        "draw_defines": known_args.draw_defines,
+        "draw_inherits": known_args.draw_inherits,
+        "draw_uses": known_args.draw_uses,
+        "colored": known_args.colored,
+        "grouped_alt": known_args.grouped_alt,
+        "grouped": known_args.grouped,
+        "nested_groups": known_args.nested_groups,
+        "annotated": known_args.annotated,
     }
 
     # TODO: use an int argument for verbosity
@@ -235,7 +244,6 @@ def main(cli_args=None):
     v = CallGraphVisitor(filenames, logger)
 
     if known_args.function or known_args.namespace:
-
         if known_args.function:
             function_name = known_args.function.split(".")[-1]
             namespace = ".".join(known_args.function.split(".")[:-1])
@@ -253,44 +261,36 @@ def main(cli_args=None):
     if known_args.dot:
         writer = DotWriter(
             graph,
-            options=['rankdir=' + known_args.rankdir],
+            options=["rankdir=" + known_args.rankdir],
             output=known_args.filename,
-            logger=logger
+            logger=logger,
         )
 
     if known_args.html:
         writer = HTMLWriter(
             graph,
-            options=['rankdir=' + known_args.rankdir],
+            options=["rankdir=" + known_args.rankdir],
             output=known_args.filename,
-            logger=logger
+            logger=logger,
         )
 
     if known_args.svg:
         writer = SVGWriter(
             graph,
-            options=['rankdir=' + known_args.rankdir],
+            options=["rankdir=" + known_args.rankdir],
             output=known_args.filename,
-            logger=logger
+            logger=logger,
         )
 
     if known_args.tgf:
-        writer = TgfWriter(
-            graph,
-            output=known_args.filename,
-            logger=logger
-        )
+        writer = TgfWriter(graph, output=known_args.filename, logger=logger)
 
     if known_args.yed:
-        writer = YedWriter(
-            graph,
-            output=known_args.filename,
-            logger=logger
-        )
+        writer = YedWriter(graph, output=known_args.filename, logger=logger)
 
     if writer:
         writer.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

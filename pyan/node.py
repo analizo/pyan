@@ -4,6 +4,7 @@
 """Abstract node representing data gathered from the analysis."""
 
 from enum import Enum
+import ast
 
 
 def make_safe_label(label):
@@ -12,11 +13,12 @@ def make_safe_label(label):
     out = label
     for word in unsafe_words:
         out = out.replace(word, "%sX" % word)
-    return out.replace('.', '__').replace('*', '')
+    return out.replace(".", "::").replace("*", "")
 
 
 class Flavor(Enum):
     """Flavor describes the kind of object a node represents."""
+
     UNSPECIFIED = "---"  # as it says on the tin
     UNKNOWN = "???"  # not determined by analysis (wildcard)
 
@@ -27,11 +29,13 @@ class Flavor(Enum):
 
     MODULE = "module"
     CLASS = "class"
+    ABSTRACTCLASS = "abstract_class"
     FUNCTION = "function"
     METHOD = "method"  # instance method
-    STATICMETHOD = "staticmethod"
-    CLASSMETHOD = "classmethod"
+    STATICMETHOD = "static_method"
+    CLASSMETHOD = "class_method"
     NAME = "name"  # Python name (e.g. "x" in "x = 42")
+    MEMBERVARIABLE = "member_variable"
 
     # Flavors have a partial ordering in specificness of the information.
     #
@@ -94,13 +98,14 @@ class Node:
         self.filename = filename
         self.flavor = flavor
         self.defined = namespace is None  # assume that unknown nodes are defined
+        self.conditional_paths = 0
 
     def get_short_name(self):
         """Return the short name (i.e. excluding the namespace), of this Node.
         Names of unknown nodes will include the *. prefix."""
 
         if self.namespace is None:
-            return '*.' + self.name
+            return "*." + self.name
         else:
             return self.name
 
@@ -108,7 +113,7 @@ class Node:
         """Return the short name, plus module and line number of definition site, if available.
         Names of unknown nodes will include the *. prefix."""
         if self.namespace is None:
-            return '*.' + self.name
+            return "*." + self.name
         else:
             if self.get_level() >= 1 and self.ast_node is not None:
                 return "%s\\n(%s:%d)" % (self.name, self.filename, self.ast_node.lineno)
@@ -119,25 +124,35 @@ class Node:
         """Return the short name, plus namespace, and module and line number of definition site, if available.
         Names of unknown nodes will include the *. prefix."""
         if self.namespace is None:
-            return '*.' + self.name
+            return "*." + self.name
         else:
             if self.get_level() >= 1:
                 if self.ast_node is not None:
-                    return "%s\\n\\n(%s:%d,\\n%s in %s)" % (self.name, self.filename, self.ast_node.lineno, repr(self.flavor), self.namespace)
+                    return "%s\\n\\n(%s:%d,\\n%s in %s)" % (
+                        self.name,
+                        self.filename,
+                        self.ast_node.lineno,
+                        repr(self.flavor),
+                        self.namespace,
+                    )
                 else:
-                    return "%s\\n\\n(%s in %s)" % (self.name, repr(self.flavor), self.namespace)
+                    return "%s\\n\\n(%s in %s)" % (
+                        self.name,
+                        repr(self.flavor),
+                        self.namespace,
+                    )
             else:
                 return self.name
 
     def get_name(self):
         """Return the full name of this node."""
 
-        if self.namespace == '':
+        if self.namespace == "":
             return self.name
         elif self.namespace is None:
-            return '*.' + self.name
+            return "*." + self.name
         else:
-            return self.namespace + '.' + self.name
+            return self.namespace + "." + self.name
 
     def get_level(self):
         """Return the level of this node (in terms of nested namespaces).
@@ -149,7 +164,7 @@ class Node:
         if self.namespace == "":
             return 0
         else:
-            return 1 + self.namespace.count('.')
+            return 1 + self.namespace.count(".")
 
     def get_toplevel_namespace(self):
         """Return the name of the top-level namespace of this node, or "" if none."""
@@ -158,7 +173,7 @@ class Node:
         if self.namespace is None:  # group all unknowns in one namespace, "*"
             return "*"
 
-        idx = self.namespace.find('.')
+        idx = self.namespace.find(".")
         if idx > -1:
             return self.namespace[0:idx]
         else:
@@ -171,6 +186,42 @@ class Node:
 
         return make_safe_label(self.get_name())
 
+    def get_definition(self):
+        node_type = str(type(self.ast_node))[12:-2]
+        label = self.get_label()
+        details = ""
+
+        if isinstance(self.ast_node, ast.Module) or isinstance(
+            self.ast_node, ast.ClassDef
+        ):
+            details = self.filename
+
+        if self.flavor in [
+            Flavor.METHOD,
+            Flavor.FUNCTION,
+            Flavor.STATICMETHOD,
+            Flavor.CLASSMETHOD,
+            Flavor.MEMBERVARIABLE,
+        ]:
+            details = self.get_protection()
+
+        if self.flavor in [
+            Flavor.METHOD,
+            Flavor.FUNCTION,
+            Flavor.STATICMETHOD,
+            Flavor.CLASSMETHOD,
+        ]:
+            lines_of_code = self.ast_node.end_lineno - self.ast_node.lineno + 1
+            number_of_parameters = len(self.ast_node.args.args)
+            conditional_paths = str(int(self.conditional_paths / 2))
+            details += " %s %s %s " % (
+                lines_of_code,
+                number_of_parameters,
+                conditional_paths,
+            )
+
+        return "%s %s %s" % (label, repr(self.flavor), details)
+
     def get_namespace_label(self):
         """Return a label for the namespace of this node, suitable for use
         in graph formats. Unique nodes should have unique labels; and labels
@@ -179,4 +230,16 @@ class Node:
         return make_safe_label(self.namespace)
 
     def __repr__(self):
-        return '<Node %s:%s>' % (repr(self.flavor), self.get_name())
+        return "<Node %s:%s>" % (repr(self.flavor), self.get_name())
+
+    def get_protection(self):
+        if not self.name.startswith("_") or (
+            self.name.startswith("__") and self.name.endswith("__")
+        ):
+            return "public"
+        elif self.name.startswith("__"):
+            return "private"
+        elif self.name.startswith("_"):
+            return "protected"
+
+        return "public"

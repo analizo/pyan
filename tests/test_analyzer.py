@@ -5,9 +5,12 @@ import pytest
 
 from pyan.analyzer import CallGraphVisitor
 
+
 @pytest.fixture
 def callgraph():
-    filenames = glob(os.path.join(os.path.dirname(__file__), "test_code/**/*.py"), recursive=True)
+    filenames = glob(
+        os.path.join(os.path.dirname(__file__), "test_code/**/*.py"), recursive=True
+    )
     v = CallGraphVisitor(filenames, logger=logging.getLogger())
     return v
 
@@ -16,6 +19,7 @@ def get_node(nodes, name):
     filtered_nodes = [node for node in nodes if node.get_name() == name]
     assert len(filtered_nodes) == 1, f"Node with name {name} should exist"
     return filtered_nodes[0]
+
 
 def get_in_dict(node_dict, name):
     return node_dict[get_node(node_dict.keys(), name)]
@@ -37,7 +41,9 @@ def test_import_relative(callgraph):
 
 
 def test_resolve_use_in_class(callgraph):
-    uses = get_in_dict(callgraph.uses_edges, "test_code.subpackage1.submodule1.A.__init__")
+    uses = get_in_dict(
+        callgraph.uses_edges, "test_code.subpackage1.submodule1.A.__init__"
+    )
     get_node(uses, "test_code.submodule2.test_2")
 
 

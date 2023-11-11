@@ -3,8 +3,10 @@
 """Format-agnostic representation of the output graph."""
 
 import re
+import ast
 import logging
 import colorsys
+
 
 class Colorizer:
     """Output graph color manager.
@@ -75,10 +77,9 @@ class VisualNode(object):
     """
     A node in the output graph: colors, internal ID, human-readable label, ...
     """
-    def __init__(
-            self, id, label='', flavor='',
-            fill_color='', text_color='', group=''):
-        self.id = id        # graphing software friendly label (no special chars)
+
+    def __init__(self, id, label="", flavor="", fill_color="", text_color="", group=""):
+        self.id = id  # graphing software friendly label (no special chars)
         self.label = label  # human-friendly label
         self.flavor = flavor
         self.fill_color = fill_color
@@ -87,14 +88,20 @@ class VisualNode(object):
 
     def __repr__(self):
         optionals = [
-                repr(s) for s in [
-                    self.label, self.flavor,
-                    self.fill_color, self.text_color, self.group] if s]
+            repr(s)
+            for s in [
+                self.label,
+                self.flavor,
+                self.fill_color,
+                self.text_color,
+                self.group,
+            ]
+            if s
+        ]
         if optionals:
-            return ('VisualNode(' + repr(self.id) +
-                    ', ' + ', '.join(optionals) + ')')
+            return "VisualNode(" + repr(self.id) + ", " + ", ".join(optionals) + ")"
         else:
-            return 'VisualNode(' + repr(self.id) + ')'
+            return "VisualNode(" + repr(self.id) + ")"
 
 
 class VisualEdge(object):
@@ -103,6 +110,7 @@ class VisualEdge(object):
 
     flavor is meant to be 'uses' or 'defines'
     """
+
     def __init__(self, source, target, flavor, color):
         self.source = source
         self.target = target
@@ -111,14 +119,20 @@ class VisualEdge(object):
 
     def __repr__(self):
         return (
-                'Edge(' + self.source.label + ' ' + self.flavor + ' ' +
-                self.target.label + ')')
+            "Edge("
+            + self.source.label
+            + " "
+            + self.flavor
+            + " "
+            + self.target.label
+            + ")"
+        )
 
 
 class VisualGraph(object):
     def __init__(
-            self, id, label, nodes=None, edges=None, subgraphs=None,
-            grouped=False):
+        self, id, label, nodes=None, edges=None, subgraphs=None, grouped=False
+    ):
         self.id = id
         self.label = label
         self.nodes = nodes or []
@@ -128,13 +142,14 @@ class VisualGraph(object):
 
     @classmethod
     def from_visitor(cls, visitor, options=None, logger=None):
-        colored = options.get('colored', False)
-        nested = options.get('nested_groups', False)
-        grouped_alt = options.get('grouped_alt', False)
-        grouped = nested or options.get('grouped', False)  # nested -> grouped
-        annotated = options.get('annotated', False)
-        draw_defines = options.get('draw_defines', False)
-        draw_uses = options.get('draw_uses', False)
+        colored = options.get("colored", False)
+        nested = options.get("nested_groups", False)
+        grouped_alt = options.get("grouped_alt", False)
+        grouped = nested or options.get("grouped", False)  # nested -> grouped
+        annotated = options.get("annotated", False)
+        draw_defines = options.get("draw_defines", False)
+        draw_inherits = options.get("draw_inherits", False)
+        draw_uses = options.get("draw_uses", False)
 
         # Terminology:
         #  - what Node calls "label" is a computer-friendly unique identifier
@@ -146,12 +161,18 @@ class VisualGraph(object):
         if annotated:
             if grouped:
                 # group label includes namespace already
-                def labeler(n): return n.get_annotated_name()
+                def labeler(n):
+                    return n.get_annotated_name()
+
             else:
                 # the node label is the only place to put the namespace info
-                def labeler(n): return n.get_long_annotated_name()
+                def labeler(n):
+                    return n.get_long_annotated_name()
+
         else:
-            def labeler(n): return n.get_short_name()
+
+            def labeler(n):
+                return n.get_short_name()
 
         logger = logger or logging.getLogger(__name__)
 
@@ -168,34 +189,44 @@ class VisualGraph(object):
             for node in visited_nodes:
                 filenames.add(node.filename)
             return filenames
-        colorizer = Colorizer(num_colors=len(find_filenames()) + 1,
-                              colored=colored, logger=logger)
+
+        colorizer = Colorizer(
+            num_colors=len(find_filenames()) + 1, colored=colored, logger=logger
+        )
 
         nodes_dict = dict()
-        root_graph = cls('G', label='', grouped=grouped)
+        root_graph = cls("G", label="", grouped=grouped)
         subgraph = root_graph
         namespace_stack = []
-        prev_namespace = ''  # The namespace '' is first in visited_nodes.
+        prev_namespace = ""  # The namespace '' is first in visited_nodes.
         for node in visited_nodes:
-            logger.info('Looking at %s' % node.name)
+            logger.info("Looking at %s" % node.name)
 
             # Create the node itself and add it to nodes_dict
             idx, fill_RGBA, text_RGB = colorizer.make_colors(node)
+
+            label = node.get_definition()
+            id = label
+
             visual_node = VisualNode(
-                    id=node.get_label(),
-                    label=labeler(node),
-                    flavor=repr(node.flavor),
-                    fill_color=fill_RGBA,
-                    text_color=text_RGB,
-                    group=idx)
+                id=id,
+                label=labeler(node),
+                flavor=repr(node.flavor),
+                fill_color=fill_RGBA,
+                text_color=text_RGB,
+                group=idx,
+            )
             nodes_dict[node] = visual_node
 
             # next namespace?
             if grouped and node.namespace != prev_namespace:
                 if not prev_namespace:
-                    logger.info('New namespace %s' % (node.namespace))
+                    logger.info("New namespace %s" % (node.namespace))
                 else:
-                    logger.info('New namespace %s, old was %s' % (node.namespace, prev_namespace))
+                    logger.info(
+                        "New namespace %s, old was %s"
+                        % (node.namespace, prev_namespace)
+                    )
                 prev_namespace = node.namespace
 
                 label = node.get_namespace_label()
@@ -209,15 +240,18 @@ class VisualGraph(object):
                         m = re.match(namespace_stack[-1].label, node.namespace)
                         # The '.' check catches siblings in cases like
                         # MeshGenerator vs. Mesh.
-                        while (m is None or
-                               m.end() == len(node.namespace) or
-                               node.namespace[m.end()] != '.'):
+                        while (
+                            m is None
+                            or m.end() == len(node.namespace)
+                            or node.namespace[m.end()] != "."
+                        ):
                             namespace_stack.pop()
                             if not len(namespace_stack):
                                 break
-                            m = re.match(
-                                    namespace_stack[-1].label, node.namespace)
-                    parentgraph = namespace_stack[-1] if len(namespace_stack) else root_graph
+                            m = re.match(namespace_stack[-1].label, node.namespace)
+                    parentgraph = (
+                        namespace_stack[-1] if len(namespace_stack) else root_graph
+                    )
                     parentgraph.subgraphs.append(subgraph)
 
                     namespace_stack.append(subgraph)
@@ -236,18 +270,28 @@ class VisualGraph(object):
             # place closer together those nodes that are linked by a
             # defines relationship.
             #
-            color = "#838b8b" if draw_defines else '#ffffff00'
+            color = "#838b8b" if draw_defines else "#ffffff00"
             for n in visitor.defines_edges:
                 if n.defined:
                     for n2 in visitor.defines_edges[n]:
                         if n2.defined:
                             root_graph.edges.append(
-                                    VisualEdge(
-                                        nodes_dict[n],
-                                        nodes_dict[n2],
-                                        'defines',
-                                        color))
+                                VisualEdge(
+                                    nodes_dict[n], nodes_dict[n2], "defines", color
+                                )
+                            )
 
+        if draw_inherits:
+            color = "#ff0000"
+            for n in visitor.inherits_edges:
+                if n.defined:
+                    for n2 in visitor.inherits_edges[n]:
+                        if n2.defined:
+                            root_graph.edges.append(
+                                VisualEdge(
+                                    nodes_dict[n], nodes_dict[n2], "inherits", color
+                                )
+                            )
         if draw_uses:
             color = "#000000"
             for n in visitor.uses_edges:
@@ -255,10 +299,7 @@ class VisualGraph(object):
                     for n2 in visitor.uses_edges[n]:
                         if n2.defined:
                             root_graph.edges.append(
-                                    VisualEdge(
-                                        nodes_dict[n],
-                                        nodes_dict[n2],
-                                        'uses',
-                                        color))
+                                VisualEdge(nodes_dict[n], nodes_dict[n2], "uses", color)
+                            )
 
         return root_graph

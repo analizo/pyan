@@ -3,21 +3,14 @@ import plotly.graph_objs as go
 
 from . import meas_xrd
 
+
 def plot_xrd(meas: meas_xrd.MeasXRD):
-    trace = go.Scatter(
-        x=meas.data["Angle"],
-        y=meas.data["Intensity"]
-    )
+    trace = go.Scatter(x=meas.data["Angle"], y=meas.data["Intensity"])
 
     layout = go.Layout(
         title="XRD data",
-        xaxis=dict(
-            title="Angle"
-        ),
-        yaxis=dict(
-            title="Intensity",
-            type="log"
-        )
+        xaxis=dict(title="Angle"),
+        yaxis=dict(title="Intensity", type="log"),
     )
 
     data = [trace]
