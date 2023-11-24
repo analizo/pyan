@@ -1006,7 +1006,7 @@ class CallGraphVisitor(ast.NodeVisitor):
         targets = sanitize_exprs(node.target)
         values = sanitize_exprs(node.iter)
         self.analyze_binding(targets, values)
-        self.get_namespace().conditional_paths += 1
+        self.get_node_of_current_namespace().conditional_paths += 1
 
         for stmt in node.body:
             self.visit(stmt)
