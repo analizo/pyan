@@ -19,6 +19,7 @@ from .visgraph import VisualGraph
 from .writers import DotWriter, HTMLWriter, SVGWriter, TgfWriter, YedWriter
 
 
+
 def main(cli_args=None):
     usage = """%(prog)s FILENAME... [--dot|--tgf|--yed|--svg|--html]"""
     desc = (
@@ -73,6 +74,23 @@ def main(cli_args=None):
         default=True,
         dest="draw_defines",
         help="do not add edges for 'defines' relationships",
+    )
+
+    parser.add_argument(
+        "-i",
+        "--inherits",
+        action="store_true",
+        dest="draw_inherits",
+        help="add edges for 'inherits' relationships [default]",
+    )
+
+    parser.add_argument(
+        "-I",
+        "--no-inherits",
+        action="store_false",
+        default=True,
+        dest="draw_inherits",
+        help="do not add edges for 'inherits' relationships",
     )
 
     parser.add_argument(
@@ -177,6 +195,7 @@ def main(cli_args=None):
 
     graph_options = {
         "draw_defines": known_args.draw_defines,
+        "draw_inherits": known_args.draw_inherits,
         "draw_uses": known_args.draw_uses,
         "colored": known_args.colored,
         "grouped_alt": known_args.grouped_alt,
@@ -206,7 +225,6 @@ def main(cli_args=None):
     v = CallGraphVisitor(filenames, logger=logger, root=root)
 
     if known_args.function or known_args.namespace:
-
         if known_args.function:
             function_name = known_args.function.split(".")[-1]
             namespace = ".".join(known_args.function.split(".")[:-1])

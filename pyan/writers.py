@@ -94,7 +94,12 @@ class TgfWriter(Writer):
         self.id_map = {}
 
     def write_node(self, node):
-        self.write("%d %s" % (self.i, node.label))
+        # TODO: create conditional to check if must use id or label
+        #       - id = pyan upstream behavior
+        #       - label = analizo extractor
+        analizo_extractor = True
+        label = node.label if analizo_extractor == True else node.id
+        self.write("%d %s" % (self.i, label))
         self.id_map[node] = self.i
         self.i += 1
 
@@ -102,7 +107,9 @@ class TgfWriter(Writer):
         self.write("#")
 
     def write_edge(self, edge):
-        flavor = "U" if edge.flavor == "uses" else "D"
+        flavor = (
+            "U" if edge.flavor == "uses" else "D" if edge.flavor == "defines" else "I"
+        )
         self.write("%s %s %s" % (self.id_map[edge.source], self.id_map[edge.target], flavor))
 
 
