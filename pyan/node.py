@@ -37,8 +37,8 @@ class Flavor(Enum):
     ABSTRACTCLASS = "abstract_class"
     FUNCTION = "function"
     METHOD = "method"  # instance method
-    STATICMETHOD = "static_method"
-    CLASSMETHOD = "class_method"
+    STATICMETHOD = "staticmethod"
+    CLASSMETHOD = "classmethod"
     NAME = "name"  # Python name (e.g. "x" in "x = 42")
     MEMBERVARIABLE = "member_variable"
 
@@ -141,11 +141,7 @@ class Node:
                         self.namespace,
                     )
                 else:
-                    return "%s\\n\\n(%s in %s)" % (
-                        self.name,
-                        repr(self.flavor),
-                        self.namespace,
-                    )
+                    return "%s\\n\\n(%s in %s)" % (self.name, repr(self.flavor), self.namespace)
             else:
                 return self.name
 

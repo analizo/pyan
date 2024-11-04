@@ -156,9 +156,7 @@ def resolve_method_resolution_order(class_base_nodes, logger):
                         if baseclass_node not in seen:
                             lists.append(C3_linearize(baseclass_node))
                     # ...and the parents themselves (in the order they appear in the ClassDef)
-                    logger.debug(
-                        "MRO: parents of %s: %s" % (node, class_base_nodes[node])
-                    )
+                    logger.debug("MRO: parents of %s: %s" % (node, class_base_nodes[node]))
                     lists.append(class_base_nodes[node])
                     logger.debug("MRO: C3 merging %s" % (lists))
                     memo[node] = [node] + C3_merge(lists)
@@ -184,9 +182,7 @@ def resolve_method_resolution_order(class_base_nodes, logger):
             if node not in memo:
                 out = [node]  # first look up in obj itself...
                 if node in class_base_nodes:  # known class?
-                    for baseclass_node in class_base_nodes[
-                        node
-                    ]:  # ...then in its bases
+                    for baseclass_node in class_base_nodes[node]:  # ...then in its bases
                         if baseclass_node not in seen:
                             out.append(baseclass_node)
                             out.extend(lookup_bases_recursive(baseclass_node))
@@ -283,9 +279,5 @@ class ExecuteInInnerScope:
         ns = from_node.get_name()
         to_node = analyzer.get_node(ns, scopename, None, flavor=Flavor.NAMESPACE)
         if analyzer.add_defines_edge(from_node, to_node):
-            analyzer.logger.info(
-                "Def from %s to %s %s" % (from_node, scopename, to_node)
-            )
-        analyzer.last_value = (
-            to_node  # Make this inner scope node assignable to track its uses.
-        )
+            analyzer.logger.info("Def from %s to %s %s" % (from_node, scopename, to_node))
+        analyzer.last_value = to_node  # Make this inner scope node assignable to track its uses.
